@@ -25,7 +25,10 @@ struct BoundedBuffer* buf_new(int size){
     // TODO: initialize semaphores
     //sem_init(&buf->capacity,      0, /*starting value?*/);
 	//sem_init(&buf->numElements,   0, /*starting value?*/);
-    
+
+    sem_init(&buf->capacity, 0, size); //Initialiserer semaforen capacity med størrelse gitt av size
+    sem_init(&buf->numElements, 0, 0); //Initialiserer semaforen numElements med antall elemnter lik null
+
     return buf;    
 }
 
@@ -43,18 +46,30 @@ void buf_destroy(struct BoundedBuffer* buf){
 void buf_push(struct BoundedBuffer* buf, int val){    
     // TODO: wait for there to be room in the buffer
     // TODO: make sure there is no concurrent access to the buffer internals
+
+    sem_wait(&buf->capacity); //Venter på at det er plass til å pushe noe inn i bufferen
+    pthread_mutex_lock(&buf->mtx); //Låser bufferen slik at push kan utføres alene
     
     rb_push(buf->buf, val);
+
+    pthread_mutex_unlock(&buf->mtx);
     
     
     // TODO: signal that there are new elements in the buffer    
+    sem_post(&buf->numElements); 
 }
 
 int buf_pop(struct BoundedBuffer* buf){
     // TODO: same, but different?
-    
+    sem_wait(&buf->numElements); //Venter på at det er elementer å poppe fra bufferen
+
+    pthread_mutex_lock(&buf->mtx); //Låser bufferen slik at pop kan utføres alene
     int val = rb_pop(buf->buf);    
     
+    pthread_mutex_unlock(&buf->mtx);
+
+    sem_post(&buf->capacity);
+
     return val;
 }
 
