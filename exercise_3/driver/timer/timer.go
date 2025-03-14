@@ -1,7 +1,7 @@
 package timer
 
 import (
-	. "Project/dataenums"
+	. "exercise_3/dataenums"
 	"time"
 )
 

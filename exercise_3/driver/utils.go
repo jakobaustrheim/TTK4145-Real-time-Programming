@@ -1,9 +1,23 @@
 package driver
 
 import (
-	. "Project/dataenums"
+	. "exercise_3/dataenums"
 	"fmt"
 )
+
+func buttonPressed(payload [NFloors][NButtons]bool,
+	btnEvent ButtonEvent) [NFloors][NButtons]bool {
+	switch btnEvent.Button {
+	case BHallUp:
+		payload[btnEvent.Floor][BHallUp] = true
+	case BHallDown:
+		payload[btnEvent.Floor][BHallUp] = true
+
+	case BCab:
+		payload[btnEvent.Floor][BCab] = true
+	}
+	return payload
+}
 
 func chooseDirection(elevator Elevator) Elevator {
 	dirnBehaviour := decideDirection(elevator)

@@ -1,15 +1,14 @@
 package driver
 
 import (
-	. "Project/dataenums"
-	"Project/driver/timer"
-	"Project/hwelevio"
+	"exercise_3/dataenums"
+	. "exercise_3/dataenums"
+	"exercise_3/driver/timer"
+	"exercise_3/hwelevio"
 	"fmt"
 )
 
 func ElevatorDriver(
-	newOrderChannel <-chan [NFloors][NButtons]bool,
-	payloadFromElevator chan<- FromDriverToAssigner,
 	payloadToLights chan<- FromDriverToLight,
 ) {
 	var (
@@ -22,17 +21,20 @@ func ElevatorDriver(
 		newOrderChannel   = make(chan [NFloors][NButtons]bool)
 		clearedRequests    = [NFloors][NButtons]bool{}
 		obstruction        bool
+		payload = [NFloors][NButtons]bool{}
 	)
 
 	go hwelevio.PollFloorSensor(floorChannel)
 	go hwelevio.PollObstructionSwitch(obstructionChannel)
 	go timer.Timer(doorOpenChan, motorActiveChan, doorClosedChan, motorInactiveChan)
-	go.hwelevio.PollButtons(newOrderChannel)
+	go hwelevio.PollButtons()
+	go buttonPressed(payload, dataenums.ButtonEvent )
 
 	elevator := initelevator()
 	hwelevio.SetMotorDirection(elevator.Dirn)
 
-	payloadToLights <- FromDriverToLight{CurrentFloor: elevator.CurrentFloor, DoorLight: false}
+
+	payloadToLights <- FromDriverToLight{CurrentFloor: elevator.CurrentFloor, DoorLight: false, Orders: elevator.Requests}
 
 	for {
 		select {

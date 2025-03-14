@@ -105,6 +105,7 @@ type FromNetworkToAssigner struct {
 type FromDriverToLight struct {
 	CurrentFloor int
 	DoorLight    bool
+	Orders   [NFloors][NButtons]ButtonState
 }
 
 type FromDriverToAssigner struct {

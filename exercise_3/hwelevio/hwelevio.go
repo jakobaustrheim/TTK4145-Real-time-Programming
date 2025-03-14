@@ -1,7 +1,7 @@
 package hwelevio
 
 import (
-	. "Project/dataenums"
+	. "exercise_3/dataenums"
 	"fmt"
 	"net"
 	"sync"
@@ -43,7 +43,7 @@ func SetDoorOpenLamp(value bool) {
 	write([4]byte{4, toByte(value), 0, 0})
 }
 
-func PollButtons(receiver chan<- ButtonEvent) {
+func PollButtons(receiver chan<-ButtonEvent) {
 	prev := make([][3]bool, NFloors)
 	for {
 		time.Sleep(PollRateMS)

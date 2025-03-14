@@ -1,7 +1,7 @@
 package driver
 
 import (
-	. "Project/dataenums"
+	. "exercise_3/dataenums"
 )
 
 func initelevator() Elevator {
