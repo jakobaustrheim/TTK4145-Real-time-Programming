@@ -1,172 +1,169 @@
-package main
+// package main
 
-import (
-	"fmt"
-	"time"
-)
+// import (
+// 	"fmt"
+// 	"time"
+// )
 
-const tick = time.Millisecond * 33
+// const tick = time.Millisecond * 33
 
-// --- RESOURCE ROUTINE --- //
-/*
-You will modify the resourceManager routine so that it... works...
-(You know the drill by now...)
+// // --- RESOURCE ROUTINE --- //
+// /*
+// You will modify the resourceManager routine so that it... works...
+// (You know the drill by now...)
 
-Note: The code in `main` does not contain checks that the final execution order is correct.
+// Note: The code in `main` does not contain checks that the final execution order is correct.
 
-Hints:
- - Remember that you can do things outside the `select` too:
-    ```Go
-    for {
-        select {
-            cases...
-        }
-        other stuff...
-    }
-    ```
- - You should not need a `busy` boolean (or any other variables for that matter).
-   But you might find it useful when experimenting...
- - `select` can have a `default` case.
- - You will need to completely restructure the existing code, not just extend it
-*/
+// Hints:
+//  - Remember that you can do things outside the `select` too:
+//     ```Go
+//     for {
+//         select {
+//             cases...
+//         }
+//         other stuff...
+//     }
+//     ```
+//  - You should not need a `busy` boolean (or any other variables for that matter).
+//    But you might find it useful when experimenting...
+//  - `select` can have a `default` case.
+//  - You will need to completely restructure the existing code, not just extend it
+// */
 
-type Resource struct {
-	value []int // Resource type is []int. Each user appends its own id when executing.
-}
+// type Resource struct {
+// 	value []int // Resource type is []int. Each user appends its own id when executing.
+// }
 
-func resourceManager(takeLow chan Resource, takeHigh chan Resource, giveBack chan Resource) {
-    res := Resource{}
+// func resourceManager(takeLow chan Resource, takeHigh chan Resource, giveBack chan Resource) {
+// 	res := Resource{}
 
-    for {
-        select {
-        case takeHigh <- res:
-            res.value = []int{}
-        default:
-            select {
-            case takeLow <- res:
-                res.value = []int{}
-            default:
-                select {
-                case res = <-giveBack:
-                case <-time.After(tick / 10):
-                }
-            }
-        }
-    }
-}
+// 	for {
+// 		select {
+// 		case takeHigh <- res:
 
+// 		default:
+// 			select {
+// 			case takeLow <- res:
+// 			case takeHigh <- res:
 
-// --- RESOURCE USERS -- //
+// 			}
+// 		}
+// 		res = <-giveBack
 
-type ResourceUserConfig struct {
-	id        int
-	priority  int
-	release   int
-	execution int
-}
+// 	}
+// }
 
-func resourceUser(cfg ResourceUserConfig, take chan Resource, giveBack chan Resource) {
+// // --- RESOURCE USERS -- //
 
-	time.Sleep(time.Duration(cfg.release) * tick)
+// type ResourceUserConfig struct {
+// 	id        int
+// 	priority  int
+// 	release   int
+// 	execution int
+// }
 
-	executionStates[cfg.id] = waiting
-	res := <-take
+// func resourceUser(cfg ResourceUserConfig, take chan Resource, giveBack chan Resource) {
 
-	executionStates[cfg.id] = executing
+// 	time.Sleep(time.Duration(cfg.release) * tick)
 
-	time.Sleep(time.Duration(cfg.execution) * tick)
-	res.value = append(res.value, cfg.id)
-	giveBack <- res
+// 	executionStates[cfg.id] = waiting
+// 	res := <-take
 
-	executionStates[cfg.id] = done
-}
+// 	executionStates[cfg.id] = executing
 
-func main() {
-	takeLow := make(chan Resource)
-	takeHigh := make(chan Resource)
-	giveBack := make(chan Resource)
-	go resourceManager(takeLow, takeHigh, giveBack)
+// 	time.Sleep(time.Duration(cfg.execution) * tick)
+// 	res.value = append(res.value, cfg.id)
+// 	giveBack <- res
 
-	executionStates = make([]ExecutionState, 10)
+// 	executionStates[cfg.id] = done
+// }
 
-	cfgs := []ResourceUserConfig{
-		{0, 0, 1, 1},
-		{1, 0, 3, 1},
-		{2, 1, 5, 1},
+// func main() {
+// 	takeLow := make(chan Resource)
+// 	takeHigh := make(chan Resource)
+// 	giveBack := make(chan Resource)
+// 	go resourceManager(takeLow, takeHigh, giveBack)
 
-		{0, 1, 10, 2},
-		{1, 0, 11, 1},
-		{2, 1, 11, 1},
-		{3, 0, 11, 1},
-		{4, 1, 11, 1},
-		{5, 0, 11, 1},
-		{6, 1, 11, 1},
-		{7, 0, 11, 1},
-		{8, 1, 11, 1},
+// 	executionStates = make([]ExecutionState, 10)
 
-		{0, 1, 25, 3},
-		{6, 0, 26, 2},
-		{7, 0, 26, 2},
-		{1, 1, 26, 2},
-		{2, 1, 27, 2},
-		{3, 1, 28, 2},
-		{4, 1, 29, 2},
-		{5, 1, 30, 2},
-	}
+// 	cfgs := []ResourceUserConfig{
+// 		{0, 0, 1, 1},
+// 		{1, 0, 3, 1},
+// 		{2, 1, 5, 1},
 
-	go executionLogger()
-	for _, cfg := range cfgs {
-		if cfg.priority == 1 {
-			go resourceUser(cfg, takeHigh, giveBack)
-		} else {
-			go resourceUser(cfg, takeLow, giveBack)
-		}
-	}
+// 		{0, 1, 10, 2},
+// 		{1, 0, 11, 1},
+// 		{2, 1, 11, 1},
+// 		{3, 0, 11, 1},
+// 		{4, 1, 11, 1},
+// 		{5, 0, 11, 1},
+// 		{6, 1, 11, 1},
+// 		{7, 0, 11, 1},
+// 		{8, 1, 11, 1},
 
-	// (no way to join goroutines, hacking it with sleep)
-	time.Sleep(time.Duration(45) * tick)
+// 		{0, 1, 25, 3},
+// 		{6, 0, 26, 2},
+// 		{7, 0, 26, 2},
+// 		{1, 1, 26, 2},
+// 		{2, 1, 27, 2},
+// 		{3, 1, 28, 2},
+// 		{4, 1, 29, 2},
+// 		{5, 1, 30, 2},
+// 	}
 
-	executionOrder := <-takeHigh
-	fmt.Println("Execution order:", executionOrder)
-}
+// 	go executionLogger()
+// 	for _, cfg := range cfgs {
+// 		if cfg.priority == 1 {
+// 			go resourceUser(cfg, takeHigh, giveBack)
+// 		} else {
+// 			go resourceUser(cfg, takeLow, giveBack)
+// 		}
+// 	}
 
-// --- EXECUTION LOGGING --- //
+// 	// (no way to join goroutines, hacking it with sleep)
+// 	time.Sleep(time.Duration(45) * tick)
 
-type ExecutionState rune
+// 	executionOrder := <-takeHigh
+// 	fmt.Println("Execution order:", executionOrder)
+// }
 
-const (
-	none      ExecutionState = '\u0020'
-	waiting                  = '\u2592'
-	executing                = '\u2593'
-	done                     = '\u2580'
-)
+// // --- EXECUTION LOGGING --- //
 
-var executionStates []ExecutionState
+// type ExecutionState rune
 
-func executionLogger() {
-	time.Sleep(tick / 2)
-	t := 0
+// const (
+// 	none      ExecutionState = '\u0020'
+// 	waiting                  = '\u2592'
+// 	executing                = '\u2593'
+// 	done                     = '\u2580'
+// )
 
-	fmt.Printf("  id:")
-	for id, _ := range executionStates {
-		fmt.Printf("%3d", id)
-	}
-	fmt.Printf("\n")
+// var executionStates []ExecutionState
 
-	for {
-		grid := ' '
-		if t%5 == 0 {
-			grid = '\u2500'
-		}
-		fmt.Printf("%04d : ", t)
-		for id, state := range executionStates {
-			fmt.Printf("%c%c%c", state, grid, grid)
-			if state == done {
-				executionStates[id] = none
-			}
-		}
-		fmt.Printf("\n")
-		t++
-		time.Sleep(tick)
-	}
-}
+// func executionLogger() {
+// 	time.Sleep(tick / 2)
+// 	t := 0
+
+// 	fmt.Printf("  id:")
+// 	for id, _ := range executionStates {
+// 		fmt.Printf("%3d", id)
+// 	}
+// 	fmt.Printf("\n")
+
+// 	for {
+// 		grid := ' '
+// 		if t%5 == 0 {
+// 			grid = '\u2500'
+// 		}
+// 		fmt.Printf("%04d : ", t)
+// 		for id, state := range executionStates {
+// 			fmt.Printf("%c%c%c", state, grid, grid)
+// 			if state == done {
+// 				executionStates[id] = none
+// 			}
+// 		}
+// 		fmt.Printf("\n")
+// 		t++
+// 		time.Sleep(tick)
+// 	}
+// }
